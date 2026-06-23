@@ -9,9 +9,9 @@
     <div class="container">
         <div class="contacts__grid">
             <div class="contacts__info">
-                <p>📞 +7 (999) 999-99-99</p>
-                <p>✉️ info@efix.ru</p>
-                <p>📍 Москва, ул. Примерная, д. 1</p>
+                <p><strong>+7 (999) 999-99-99</strong></p>
+                <p>info@efix.ru</p>
+                <p>Москва, ул. Примерная, д. 1</p>
                 <div class="contacts__social">
                     <a href="#">WhatsApp</a>
                     <a href="#">Telegram</a>

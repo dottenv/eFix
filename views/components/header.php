@@ -1,4 +1,4 @@
-<header class="header" x-data="{ mobileOpen: false, scrolled: false }" @scroll.window="scrolled = window.scrollY > 50">
+<header class="header" x-data="{ mobileOpen: false }">
     <div class="container">
         <a href="/" class="logo">eFix<span>.</span></a>
         <nav class="nav" :class="{ 'open': mobileOpen }">
@@ -9,10 +9,10 @@
             <a href="/contacts">Контакты</a>
         </nav>
         <div class="header__cta">
-            <a href="#" class="btn btn--primary" @click.prevent="$dispatch('open-modal')">Заказать звонок</a>
+            <a href="#" class="btn btn--primary btn--sm" @click.prevent="$dispatch('open-modal')">Заказать звонок</a>
         </div>
-        <button class="hamburger" @click="mobileOpen = !mobileOpen" :class="{ 'active': mobileOpen }">
-            <span></span>
+        <button class="hamburger" @click="mobileOpen = !mobileOpen" :class="{ 'open': mobileOpen }">
+            <span></span><span></span><span></span>
         </button>
     </div>
 </header>

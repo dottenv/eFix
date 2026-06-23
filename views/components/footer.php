@@ -32,15 +32,15 @@
             </div>
             <div class="footer__contact">
                 <h3>Контакты</h3>
-                <p>📞 <strong>+7 (999) 999-99-99</strong></p>
-                <p>✉️ info@efix.ru</p>
-                <p>📍 Москва, ул. Примерная, д. 1</p>
-                <p style="margin-top:.75rem;font-size:.85rem">Ежедневно с 9:00 до 21:00</p>
+                <p><strong>+7 (999) 999-99-99</strong></p>
+                <p>info@efix.ru</p>
+                <p>Москва, ул. Примерная, д. 1</p>
+                <p style="margin-top:.75rem;font-size:.8rem">Ежедневно: 9:00 — 21:00</p>
             </div>
         </div>
         <div class="footer__bottom">
-            <span>© <?= date('Y') ?> eFix. Все права защищены.</span>
-            <span>Согласие на обработку персональных данных</span>
+            <span>&copy; <?= date('Y') ?> eFix. Все права защищены.</span>
+            <span>Политика конфиденциальности</span>
         </div>
     </div>
 </footer>
