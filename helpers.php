@@ -51,6 +51,7 @@ function url_for($name, $params = []) {
         'admin.stats_forms' => '/admin/api/stats/forms',
         'admin.stats_languages' => '/admin/api/stats/languages',
         'admin.stats_sessions' => '/admin/api/stats/sessions',
+        'static' => '/static',
     ];
     $url = $urls[$name] ?? '/';
 

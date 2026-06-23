@@ -12,9 +12,10 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9881;</text></svg>">
-    <link rel="stylesheet" href="<?= url_for('static', ['filename' => 'css/style.css']) ?>">
+    <link rel="stylesheet" href="/static/css/style.css">
     <?= $extra_head ?? '' ?>
     <?= render_hook('public_head_end', get_defined_vars()) ?>
+    <script defer src="/static/js/main.js"></script>
 </head>
 <body>
     <header class="header" id="header">
