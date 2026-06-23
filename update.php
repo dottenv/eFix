@@ -13,8 +13,29 @@ $GITHUB_ZIP = 'https://github.com/dottenv/eFix/archive/main.zip';
 // Files to NEVER overwrite during update
 $PRESERVE = [
     '.env', 'efix.db', 'efix.db-journal', 'install.php', 'update.php',
-    '.htaccess', 'index.html',
+    'index.html',
 ];
+
+// .htaccess template (applied if missing)
+$HTACCESS_TEMPLATE = "DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Root -> index.php
+RewriteRule ^$ index.php [L]
+
+# Clean URLs: /install -> /install.php, /update -> /update.php (only if file exists)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/$1.php -f
+RewriteRule ^([a-zA-Z0-9_-]+)$ $1.php [L]
+
+# All other requests -> index.php (front controller)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+";
 
 // ---------- helpers ----------
 function rrmdir($dir) {
@@ -168,6 +189,23 @@ if ($step === 'run') {
         echo "   База данных в актуальном состоянии.\n";
     } catch (Exception $e) {
         echo "   Ошибка БД: " . $e->getMessage() . "\n";
+    }
+
+    // Ensure .htaccess has root redirect
+    echo "5. Проверяю .htaccess...\n";
+    $ht_file = __DIR__ . '/.htaccess';
+    $needs_ht = !file_exists($ht_file);
+    if (!$needs_ht) {
+        $content = file_get_contents($ht_file);
+        if (strpos($content, 'RewriteRule ^$ index.php') === false) {
+            $needs_ht = true;
+        }
+    }
+    if ($needs_ht) {
+        file_put_contents($ht_file, $HTACCESS_TEMPLATE);
+        echo "   .htaccess обновлён (добавлен редирект корня на index.php).\n";
+    } else {
+        echo "   .htaccess в порядке.\n";
     }
 
     echo "\n=== Готово! ===\n";

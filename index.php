@@ -37,6 +37,15 @@ if (str_starts_with($uri, '/static/')) {
     notFound();
 }
 
+// Clean URLs: /install -> install.php, /update -> update.php, etc.
+if (preg_match('#^/([a-zA-Z0-9_-]+)$#', $uri, $m)) {
+    $script = __DIR__ . '/' . $m[1] . '.php';
+    if (file_exists($script) && !in_array($m[1], ['index', 'config', 'database', 'helpers', 'hooks', 'render'])) {
+        require $script;
+        exit;
+    }
+}
+
 trackPageView($uri);
 
 require_once __DIR__ . '/routes/main.php';

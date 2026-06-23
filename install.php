@@ -15,16 +15,30 @@ $error = '';
 $success = '';
 $GITHUB_ZIP = 'https://github.com/dottenv/eFix/archive/main.zip';
 
+// ---------- .htaccess template ----------
+$HTACCESS_CONTENT = "DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Root -> index.php
+RewriteRule ^$ index.php [L]
+
+# Clean URLs: /install -> /install.php, /update -> /update.php (only if file exists)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/$1.php -f
+RewriteRule ^([a-zA-Z0-9_-]+)$ $1.php [L]
+
+# All other requests -> index.php (front controller)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+";
+
 // ---------- ensure .htaccess exists ----------
 if (!file_exists(__DIR__ . '/.htaccess')) {
-    $ht = "DirectoryIndex index.php\n\n";
-    $ht .= "<IfModule mod_rewrite.c>\n";
-    $ht .= "RewriteEngine On\n";
-    $ht .= "RewriteCond %{REQUEST_FILENAME} !-f\n";
-    $ht .= "RewriteCond %{REQUEST_FILENAME} !-d\n";
-    $ht .= "RewriteRule ^(.*)$ index.php [QSA,L]\n";
-    $ht .= "</IfModule>\n";
-    @file_put_contents(__DIR__ . '/.htaccess', $ht);
+    @file_put_contents(__DIR__ . '/.htaccess', $HTACCESS_CONTENT);
 }
 
 // ---------- helpers ----------

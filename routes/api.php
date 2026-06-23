@@ -72,7 +72,7 @@ if (str_starts_with($uri, '/api/')) {
             $page = $result['page'];
             $perPage = $result['perPage'];
             $totalPages = max(1, (int)ceil($total / $perPage));
-            include __DIR__ . '/../templates/partials/_prices_table.php';
+            include __DIR__ . '/../templates/_prices_table.php';
             $html = ob_get_clean();
 
             json_response(['html' => $html, 'total' => $total, 'page' => $page, 'totalPages' => $totalPages]);
