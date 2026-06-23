@@ -333,7 +333,7 @@ document.addEventListener('alpine:init', () => {
         container.innerHTML = data.map(d =>
             `<div class="pct-bar" style="margin-bottom:6px">
                 <span style="flex:0 0 70px;font-size:12px;color:var(--text)">${d.label}</span>
-                <div class="pct-bar__track"><div class="pct-bar__fill" style="width:${d.pct}%"></div></div>
+                <div class="pct-bar__track"><div class="pct-bar__fill" style="width:${(d.count / max * 100).toFixed(1)}%"></div></div>
                 <span class="pct-bar__label">${d.count}</span>
             </div>`
         ).join('');

@@ -79,6 +79,11 @@ class PageView {
         return $db->fetchAll("SELECT user_agent, COUNT(*) as count FROM page_view WHERE user_agent IS NOT NULL GROUP BY user_agent ORDER BY count DESC LIMIT 20");
     }
 
+    public static function getOs() {
+        $db = Database::getInstance();
+        return $db->fetchAll("SELECT user_agent, COUNT(*) as count FROM page_view WHERE user_agent IS NOT NULL GROUP BY user_agent ORDER BY count DESC LIMIT 20");
+    }
+
     public static function getScreens() {
         $db = Database::getInstance();
         return $db->fetchAll("SELECT screen, COUNT(*) as count FROM page_view WHERE screen IS NOT NULL AND screen != '' GROUP BY screen ORDER BY count DESC LIMIT 10");

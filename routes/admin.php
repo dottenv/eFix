@@ -286,14 +286,32 @@ switch ($uri) {
             $statsEndpoint = substr($uri, strlen('/admin/api/stats/'));
             switch ($statsEndpoint) {
                 case 'summary':
-                    json_response(PageView::getSummary());
+                    $s = PageView::getSummary();
+                    json_response([
+                        'viewsToday' => (int)($s['today']['views'] ?? 0),
+                        'uniqueToday' => (int)($s['today']['visitors'] ?? 0),
+                        'viewsWeek' => (int)($s['week']['views'] ?? 0),
+                        'uniqueWeek' => (int)($s['week']['visitors'] ?? 0),
+                        'viewsMonth' => (int)($s['month']['views'] ?? 0),
+                        'uniqueMonth' => (int)($s['month']['visitors'] ?? 0),
+                        'totalViews' => (int)($s['total']['views'] ?? 0),
+                        'sessions' => (int)($s['week']['visitors'] ?? 0),
+                        'requestsCount' => 0,
+                    ]);
                     break;
                 case 'page-views':
                     $days = (int)($_GET['days'] ?? 30);
-                    json_response(PageView::getDailyViews($days));
+                    $raw = PageView::getDailyViews($days);
+                    $labels = []; $values = [];
+                    foreach ($raw as $row) {
+                        $labels[] = $row['date'];
+                        $values[] = (int)$row['views'];
+                    }
+                    json_response(['labels' => $labels, 'values' => $values]);
                     break;
                 case 'pages':
-                    json_response(PageView::getTopPages());
+                    $raw = PageView::getTopPages();
+                    json_response(array_map(fn($r) => ['path' => $r['path'], 'count' => (int)$r['views']], $raw));
                     break;
                 case 'referrers':
                     json_response(PageView::getReferrers());
@@ -305,37 +323,91 @@ switch ($uri) {
                     json_response(PageView::getFrequentSearches());
                     break;
                 case 'device-breakdown':
-                    json_response(PageView::getDeviceTypeBreakdown());
+                case 'device-types':
+                    $raw = PageView::getDeviceTypeBreakdown();
+                    json_response(array_map(fn($r) => ['label' => $r['device_type'] ?? 'Unknown', 'count' => (int)$r['count']], $raw));
                     break;
                 case 'locations':
                     json_response(PageView::getLocations());
-                    break;
-                case 'device-types':
-                    json_response(PageView::getDeviceTypeBreakdown());
                     break;
                 case 'realtime':
                     json_response(PageView::getRecent(20));
                     break;
                 case 'utms':
-                    json_response(PageView::getUtms());
+                    $raw = PageView::getUtms();
+                    json_response(array_map(fn($r) => [
+                        'source' => $r['utm_source'] ?? '—',
+                        'medium' => $r['utm_medium'] ?? '—',
+                        'campaign' => $r['utm_campaign'] ?? '—',
+                        'count' => (int)$r['count'],
+                    ], $raw));
                     break;
                 case 'browsers':
-                    json_response(PageView::getBrowsers());
+                    $raw = PageView::getBrowsers();
+                    $browserGroups = [];
+                    foreach ($raw as $r) {
+                        $ua = $r['user_agent'] ?? '';
+                        $name = 'Unknown';
+                        if (stripos($ua, 'Chrome') !== false && stripos($ua, 'Edg') === false && stripos($ua, 'OPR') === false) $name = 'Chrome';
+                        elseif (stripos($ua, 'Firefox') !== false) $name = 'Firefox';
+                        elseif (stripos($ua, 'Safari') !== false && stripos($ua, 'Chrome') === false) $name = 'Safari';
+                        elseif (stripos($ua, 'Edg') !== false) $name = 'Edge';
+                        elseif (stripos($ua, 'Opera') !== false || stripos($ua, 'OPR') !== false) $name = 'Opera';
+                        $browserGroups[$name] = ($browserGroups[$name] ?? 0) + (int)$r['count'];
+                    }
+                    $result = [];
+                    foreach ($browserGroups as $label => $count) {
+                        $result[] = ['label' => $label, 'count' => $count];
+                    }
+                    json_response($result);
                     break;
                 case 'os':
-                    json_response(PageView::getBrowsers());
+                    $raw = PageView::getOs();
+                    $osGroups = [];
+                    foreach ($raw as $r) {
+                        $ua = $r['user_agent'] ?? '';
+                        $os = 'Unknown';
+                        if (stripos($ua, 'Windows') !== false) $os = 'Windows';
+                        elseif (stripos($ua, 'Mac') !== false) $os = 'macOS';
+                        elseif (stripos($ua, 'Linux') !== false) $os = 'Linux';
+                        elseif (stripos($ua, 'Android') !== false) $os = 'Android';
+                        elseif (stripos($ua, 'iOS') !== false || stripos($ua, 'iPhone') !== false) $os = 'iOS';
+                        $osGroups[$os] = ($osGroups[$os] ?? 0) + (int)$r['count'];
+                    }
+                    $result = [];
+                    foreach ($osGroups as $label => $count) {
+                        $result[] = ['label' => $label, 'count' => $count];
+                    }
+                    json_response($result);
                     break;
                 case 'screens':
                     json_response(PageView::getScreens());
                     break;
                 case 'forms':
-                    json_response(PageView::getFormInteractions());
+                    $raw = PageView::getFormInteractions();
+                    json_response(array_map(fn($r) => [
+                        'form' => $r['form_name'] ?? '—',
+                        'action' => $r['action'] ?? '—',
+                        'count' => (int)$r['count'],
+                    ], $raw));
                     break;
                 case 'languages':
-                    json_response(PageView::getLanguages());
+                    $raw = PageView::getLanguages();
+                    json_response(array_map(fn($r) => ['lang' => $r['language'] ?? '—', 'count' => (int)$r['count']], $raw));
                     break;
                 case 'sessions':
-                    json_response(PageView::getSummary());
+                    $s = PageView::getSummary();
+                    json_response([
+                        'viewsToday' => (int)($s['today']['views'] ?? 0),
+                        'uniqueToday' => (int)($s['today']['visitors'] ?? 0),
+                        'viewsWeek' => (int)($s['week']['views'] ?? 0),
+                        'uniqueWeek' => (int)($s['week']['visitors'] ?? 0),
+                        'viewsMonth' => (int)($s['month']['views'] ?? 0),
+                        'uniqueMonth' => (int)($s['month']['visitors'] ?? 0),
+                        'totalViews' => (int)($s['total']['views'] ?? 0),
+                        'sessions' => (int)($s['week']['visitors'] ?? 0),
+                        'requestsCount' => 0,
+                    ]);
                     break;
                 default:
                     json_response(['error' => 'Not found'], 404);
