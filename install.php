@@ -1,31 +1,14 @@
 <?php
 
-/**
- * eFix — Bootstrap installer
- *
- * Использование:
- *   Веб:     загрузите install.php на сервер, откройте site.com/install.php
- *            или сразу перейдите на site.com/install/
- *   CLI:     php install.php
- *
- * Что делает:
- *   1. Клонирует репозиторий (если папка пуста)
- *   2. Создаёт public/.htaccess
- *   3. Редиректит на /install/ (web-установщик)
- */
-
-$publicDir = __DIR__ . '/public';
-$htaccess = $publicDir . '/.htaccess';
+$htaccess = __DIR__ . '/.htaccess';
 $lockFile = __DIR__ . '/storage/.installed';
 
-// Уже установлено?
 if (file_exists($lockFile)) {
     echo "eFix уже установлен.\n";
     exit;
 }
 
-// Клонирование репозитория, если папка пуста
-$isBare = !is_dir($publicDir) || (count(scandir($publicDir)) <= 2);
+$isBare = !file_exists(__DIR__ . '/index.php') || !is_dir(__DIR__ . '/src');
 
 if ($isBare) {
     $repo = 'https://github.com/dottenv/eFix.git';
@@ -56,7 +39,6 @@ if ($isBare) {
     echo "Репозиторий склонирован.\n";
 }
 
-// Создание .htaccess
 if (!file_exists($htaccess)) {
     file_put_contents($htaccess, implode("\n", [
         'RewriteEngine On',
@@ -68,11 +50,9 @@ if (!file_exists($htaccess)) {
     echo ".htaccess создан.\n";
 }
 
-// Если запущен из браузера — редирект на установщик
 if (PHP_SAPI !== 'cli') {
     header('Location: /install/');
     exit;
 }
 
 echo "Установщик доступен по адресу: /install/\n";
-echo "Или запустите: php -S localhost:8000 -t public\n";
