@@ -66,17 +66,15 @@ if (str_starts_with($uri, '/api/')) {
                 'ip' => getClientIp(),
             ]);
 
-            ob_start();
             $items = $result['items'];
             $total = $result['total'];
             $page = $result['page'];
             $perPage = $result['perPage'];
             $totalPages = max(1, (int)ceil($total / $perPage));
-            include __DIR__ . '/../templates/_prices_table.php';
-            $html = ob_get_clean();
 
-            json_response(['html' => $html, 'total' => $total, 'page' => $page, 'totalPages' => $totalPages]);
-            break;
+            header('Content-Type: text/html; charset=utf-8');
+            include __DIR__ . '/../templates/_prices_table.php';
+            exit;
 
         case '/api/workshops':
             $workshops = PartnerWorkshop::getActive();
