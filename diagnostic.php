@@ -176,7 +176,7 @@ $routes_to_test = [
     '/api/workshops' => 'GET',
     '/index.php' => 'GET',
 ];
-test('Маршрутов в url_for', true, 'в helpers.php: ' . substr_count(file_get_contents(__DIR__ . '/helpers.php'), "=> '/"));
+test('Маршрутов в url_for', true, 'в Helpers.php: ' . substr_count(file_get_contents(__DIR__ . '/app/Helpers.php'), "=> '/"));
 
 // ========== 8. Template check ==========
 $template_vars = [
