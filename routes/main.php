@@ -46,6 +46,10 @@ switch ($uri) {
         json_response(['ok' => true]);
         break;
 
+    case '/index.php':
+        redirect('/');
+        break;
+
     default:
         if (str_starts_with($uri, '/admin/') || str_starts_with($uri, '/api/')) {
             break;
