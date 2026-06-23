@@ -47,7 +47,9 @@ switch ($uri) {
         break;
 
     case '/index.php':
-        redirect('/');
+        // Direct access to index.php — show homepage
+        trackPageView('/');
+        render('index', ['active' => 'home']);
         break;
 
     default:

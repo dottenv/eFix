@@ -315,6 +315,12 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 @chmod(__DIR__ . '/efix.db', 0644);
             }
 
+            // Create index.html fallback
+            if (!file_exists(__DIR__ . '/index.html')) {
+                $fallback = '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=index.php"><title>' . htmlspecialchars($site_name) . '</title></head><body><p><a href="index.php">Перейти на сайт</a></p></body></html>';
+                file_put_contents(__DIR__ . '/index.html', $fallback);
+            }
+
             $success = 'Установка завершена успешно!';
         } catch (Exception $e) {
             $error = 'Ошибка при установке: ' . $e->getMessage();
@@ -555,6 +561,53 @@ code {
         </div>
     </div>
     <?php else: ?>
+
+    <!-- Directory diagnostic -->
+    <?php
+        $doc_root = $_SERVER['DOCUMENT_ROOT'] ?? 'неизвестно';
+        $cur_dir = __DIR__;
+        $roots_match = realpath($doc_root) === realpath($cur_dir);
+    ?>
+    <div class="card">
+        <h2>Диагностика</h2>
+        <ul class="check-list">
+            <li>
+                <?= $roots_match ? '<span class="ok">&#10003;</span>' : '<span class="fail">&#10007;</span>' ?>
+                <span class="label">Корень сайта (DocumentRoot)</span>
+                <code style="font-size:13px"><?= htmlspecialchars($doc_root) ?></code>
+            </li>
+            <li>
+                <?= $roots_match ? '<span class="ok">&#10003;</span>' : '<span class="fail">&#10007;</span>' ?>
+                <span class="label">Текущая папка (__DIR__)</span>
+                <code style="font-size:13px"><?= htmlspecialchars($cur_dir) ?></code>
+            </li>
+        </ul>
+        <?php if (!$roots_match): ?>
+            <div class="alert alert-error" style="margin-top:12px">
+                <strong>Папки не совпадают.</strong> Скорее всего, ты залил файлы не в ту директорию.<br><br>
+                Reg.ru: зайди в панель управления хостингом → раздел «Сайты» → проверь поле «Корневая папка» (Document Root).<br>
+                Обычно это <code>www</code> или <code>public_html</code> внутри твоего FTP-аккаунта.<br><br>
+                Залей файлы проекта в папку: <code><?= htmlspecialchars(rtrim($doc_root, '/\\')) ?></code>
+            </div>
+        <?php elseif ($files_ok): ?>
+            <div class="alert alert-success" style="margin-top:12px">
+                Файлы в правильной папке.
+            </div>
+            <?php if ($rewrite_ok === false && !empty($_SERVER['SERVER_SOFTWARE']) && strpos($_SERVER['SERVER_SOFTWARE'], 'nginx') !== false): ?>
+            <div class="alert alert-error" style="margin-top:12px">
+                <strong>Сервер использует nginx.</strong> На Reg.ru .htaccess не работает с nginx.<br><br>
+                Чтобы сайт открывался по адресу <code>/</code>:
+                <ol style="margin:8px 0 0 20px">
+                    <li>Зайди в <strong>панель управления Reg.ru</strong> → Хостинг → Управление сайтом</li>
+                    <li>Найди раздел <strong>«Веб-сервер»</strong> — переключи на <strong>Apache</strong> (если есть выбор)</li>
+                    <li>Или найди <strong>«Документ по умолчанию»</strong> — добавь <code>index.php</code> первым в списке</li>
+                    <li>Или в разделе <strong>«ЧПУ» / «Rewrite»</strong> добавь правило: все запросы на <code>index.php</code></li>
+                </ol>
+                После этого <code>/</code> будет открывать сайт.
+            </div>
+            <?php endif ?>
+        <?php endif ?>
+    </div>
 
     <!-- System check -->
     <div class="card">
