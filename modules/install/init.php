@@ -8,6 +8,11 @@ if ($action === 'download' && extension_loaded('zip')) {
     exit;
 }
 
+if ($action === 'checkdb' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require __DIR__ . '/actions/checkdb.php';
+    exit;
+}
+
 if ($action === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require __DIR__ . '/actions/install.php';
     exit;

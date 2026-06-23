@@ -216,9 +216,11 @@ code{background:#F3F4F6;padding:1px 5px;border-radius:4px;font-size:12px}
                             </div>
                         </div>
                     </div>
-                    <div class="alert alert-info" style="margin-top:8px;font-size:12px;padding:10px 14px">
-                        База данных должна существовать. Установщик создаст таблицы.
-                    </div>
+                    <button type="button" class="btn btn--outline" id="checkDbBtn" onclick="checkDbConnection()" style="margin-top:12px;width:100%">
+                        <span id="checkDbIcon" style="display:none" class="cl__spinner"></span>
+                        <span id="checkDbText">Проверить подключение</span>
+                    </button>
+                    <div id="checkDbResult" style="margin-top:8px;font-size:13px;font-weight:600;display:none"></div>
                 </div>
 
                 <h2 style="margin-top:20px">Администратор</h2>
@@ -361,6 +363,49 @@ document.querySelectorAll('.toggle-pass').forEach(function(btn) {
         if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
     });
 });
+
+function checkDbConnection() {
+    var btn = document.getElementById('checkDbBtn');
+    var icon = document.getElementById('checkDbIcon');
+    var text = document.getElementById('checkDbText');
+    var result = document.getElementById('checkDbResult');
+
+    btn.disabled = true;
+    icon.style.display = 'inline-block';
+    text.textContent = 'Проверяю...';
+    result.style.display = 'none';
+
+    var data = new URLSearchParams();
+    data.set('host', document.getElementById('db_host').value);
+    data.set('port', document.getElementById('db_port').value);
+    data.set('name', document.getElementById('db_name').value);
+    data.set('user', document.getElementById('db_user').value);
+    data.set('pass', document.getElementById('db_pass').value);
+
+    fetch('?action=checkdb', { method: 'POST', body: data })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            icon.style.display = 'none';
+            btn.disabled = false;
+            text.textContent = 'Проверить подключение';
+            result.style.display = 'block';
+            if (res.ok) {
+                result.className = 'alert alert-success';
+                result.textContent = res.message || 'Подключение успешно';
+            } else {
+                result.className = 'alert alert-error';
+                result.textContent = res.error || 'Ошибка подключения';
+            }
+        })
+        .catch(function(err) {
+            icon.style.display = 'none';
+            btn.disabled = false;
+            text.textContent = 'Проверить подключение';
+            result.style.display = 'block';
+            result.className = 'alert alert-error';
+            result.textContent = 'Ошибка: ' + err;
+        });
+}
 
 function startInstall() {
     var form = document.getElementById('installForm');

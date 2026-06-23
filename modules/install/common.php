@@ -7,7 +7,7 @@ const PROJECT_FILES = [
     'app/Hooks.php', 'app/Render.php', 'app/Router.php',
     'modules/install/common.php', 'modules/install/init.php',
     'modules/install/views/layout.php',
-    'modules/install/actions/download.php', 'modules/install/actions/install.php',
+    'modules/install/actions/download.php', 'modules/install/actions/install.php', 'modules/install/actions/checkdb.php',
     'app/Models/Admin.php', 'app/Models/SiteContent.php', 'app/Models/Service.php',
     'app/Models/PriceItem.php', 'app/Models/PartnerWorkshop.php', 'app/Models/ContactRequest.php',
     'app/Models/PageView.php', 'app/Models/SearchQuery.php', 'app/Models/IpLocation.php',

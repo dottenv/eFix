@@ -110,8 +110,8 @@ class Database {
         if (!in_array('site_content', $tables)) {
             $this->sql("CREATE TABLE site_content (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                page TEXT NOT NULL DEFAULT 'global',
-                `key` TEXT NOT NULL,
+                page VARCHAR(255) NOT NULL DEFAULT 'global',
+                `key` VARCHAR(255) NOT NULL,
                 value TEXT,
                 UNIQUE(page, `key`)
             )");
