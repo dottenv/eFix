@@ -1,3 +1,3 @@
 <button class="floating-btn" @click="$dispatch('open-modal')">
-    Заказать звонок
+    <span>📞</span> <span>Заказать звонок</span>
 </button>

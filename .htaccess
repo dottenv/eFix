@@ -1,4 +1,10 @@
+DirectoryIndex index.php
+
 RewriteEngine On
+
+# Если реальный файл или директория — отдаём как есть
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+
+# Всё остальное — в index.php
 RewriteRule ^ index.php [QSA,L]

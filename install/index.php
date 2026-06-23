@@ -1,49 +1,35 @@
 <?php
 
-/**
- * eFix — Web Installer
- *
- * Шаги:
- *   1. Проверка требований
- *   2. Настройка БД
- *   3. Настройки сайта
- *   4. Создание администратора
- *   5. Установка
- */
-
 session_start();
 
 $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
 $errors = [];
 
-$root = __DIR__ . '/../..';
+$root = __DIR__ . '/..';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['install'] = array_merge($_SESSION['install'] ?? [], $_POST);
 }
 
-// Already installed?
 if (file_exists("$root/storage/.installed") && $step !== 'done') {
     header('Location: /');
     exit;
 }
 
-// --- Helpers ---
-function req(array $data): array {
+function req(string $root): array {
     $checks = [];
     $checks[] = ['PHP >= 8.1', PHP_VERSION_ID >= 80100, PHP_VERSION];
     $checks[] = ['PDO', extension_loaded('pdo'), null];
     $checks[] = ['PDO MySQL', extension_loaded('pdo_mysql'), null];
     $checks[] = ['JSON', extension_loaded('json'), null];
-    $checks[] = ['config/ writable', is_writable(__DIR__ . '/../../config'), null];
-    $checks[] = ['public/ writable', is_writable(__DIR__ . '/..'), null];
+    $checks[] = ['config/ writable', is_writable("$root/config"), null];
+    $checks[] = ['assets/ writable', is_writable("$root/assets"), null];
     return $checks;
 }
 
 function install(array $data, string $root): array {
     $errors = [];
 
-    // 1. Write config
     $cfg = "<?php\n\nreturn [\n"
         . "    'name' => '" . addslashes($data['site_name']) . "',\n"
         . "    'url' => '" . addslashes($data['site_url']) . "',\n"
@@ -64,7 +50,6 @@ function install(array $data, string $root): array {
         return $errors;
     }
 
-    // 2. Connect + migrate
     $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
         $data['db_host'], $data['db_port'], $data['db_name']);
 
@@ -79,12 +64,10 @@ function install(array $data, string $root): array {
         return $errors;
     }
 
-    // 3. Admin
     $hash = password_hash($data['admin_pass'], PASSWORD_BCRYPT);
     $stmt = $pdo->prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)');
     $stmt->execute([$data['admin_user'], $hash]);
 
-    // 4. Default content
     $defaults = [
         'site_name' => $data['site_name'],
         'site_phone' => $data['site_phone'],
@@ -107,17 +90,13 @@ function install(array $data, string $root): array {
         $insert->execute([$key, $value]);
     }
 
-    // 5. .env
     $env = "DB_HOST={$data['db_host']}\nDB_PORT={$data['db_port']}\nDB_NAME={$data['db_name']}\nDB_USER={$data['db_user']}\nDB_PASS={$data['db_pass']}\n";
     file_put_contents("$root/.env", $env);
-
-    // 6. Lock
     file_put_contents("$root/storage/.installed", date('c'));
 
     return $errors;
 }
 
-// Process final step
 if ($step === 5) {
     $errors = install($_SESSION['install'] ?? [], $root);
     if (!$errors) {
@@ -167,7 +146,7 @@ input:focus{outline:none;border-color:#FF6B35}
 <?php if ($step === 'done'): ?>
     <div class="ok-box">
         <h2>✓ Установка завершена</h2>
-        <p>eFix готов к работе. Удалите папку <strong>install</strong> из public/ для безопасности.</p>
+        <p>eFix готов к работе. Удалите папку <strong>install</strong> для безопасности.</p>
         <a href="/" class="btn">На сайт</a>
         <br><br>
         <a href="/admin/login" class="btn" style="background:#0B2447">Войти в админку</a>
@@ -188,7 +167,7 @@ input:focus{outline:none;border-color:#FF6B35}
 
     <form method="post" action="?step=<?= $step + 1 ?>">
 
-    <?php if ($step === 1): $checks = req($_POST); $ok = true; ?>
+    <?php if ($step === 1): $checks = req($root); $ok = true; ?>
         <?php foreach ($checks as $c): $pass = $c[1]; $ok = $ok && $pass; ?>
             <div class="chk <?= $pass ? 'ok' : 'fail' ?>">
                 <span><?= htmlspecialchars($c[0]) ?></span>
