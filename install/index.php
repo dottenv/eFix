@@ -65,7 +65,10 @@ function install(array $data, string $root): array {
     }
 
     $hash = password_hash($data['admin_pass'], PASSWORD_BCRYPT);
-    $stmt = $pdo->prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)');
+    $stmt = $pdo->prepare(
+        'INSERT INTO admins (username, password_hash) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)'
+    );
     $stmt->execute([$data['admin_user'], $hash]);
 
     $defaults = [
