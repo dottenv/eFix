@@ -108,15 +108,25 @@ if (file_exists($db_file)) {
 }
 
 // ========== 6. Test DB connection ==========
-if (file_exists($db_file) && check_ext('pdo') && check_ext('pdo_sqlite')) {
+$dbOk = false;
+if (file_exists($db_file) && extension_loaded('pdo') && extension_loaded('pdo_sqlite')) {
+    $dbOk = true;
+} elseif (file_exists(__DIR__ . '/.env') && extension_loaded('pdo') && extension_loaded('pdo_mysql')) {
+    $dbOk = true;
+}
+if ($dbOk) {
     try {
         require_once __DIR__ . '/config.php';
         require_once __DIR__ . '/database.php';
         $db = Database::getInstance();
         $pdo = $db->getPdo();
-        test('Подключение к БД', true, 'SQLite — успешно');
+        test('Подключение к БД', true, $db->getDriver() . ' — успешно');
 
-        $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN);
+        if ($db->getDriver() === 'mysql') {
+            $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+        } else {
+            $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN);
+        }
         test('Таблицы в БД (' . count($tables) . ')', !empty($tables), implode(', ', $tables));
 
         // Check key tables have data

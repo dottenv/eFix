@@ -2,19 +2,30 @@
 class Database {
     private static $instance = null;
     private $pdo;
+    private $driver;
 
     private function __construct() {
         $dsn = DATABASE_URL;
-        if (str_starts_with($dsn, 'sqlite:')) {
+        $this->driver = str_starts_with($dsn, 'sqlite:') ? 'sqlite' : (str_starts_with($dsn, 'mysql:') ? 'mysql' : 'other');
+
+        if ($this->driver === 'sqlite') {
             $path = substr($dsn, 7);
             $this->pdo = new PDO('sqlite:' . $path);
+        } elseif (DB_USER) {
+            $this->pdo = new PDO($dsn, DB_USER, DB_PASS);
         } else {
             $this->pdo = new PDO($dsn);
         }
+
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        $this->pdo->exec('PRAGMA journal_mode=WAL');
-        $this->pdo->exec('PRAGMA foreign_keys=ON');
+
+        if ($this->driver === 'sqlite') {
+            $this->pdo->exec('PRAGMA journal_mode=WAL');
+            $this->pdo->exec('PRAGMA foreign_keys=ON');
+        } elseif ($this->driver === 'mysql') {
+            $this->pdo->exec('SET NAMES utf8mb4');
+        }
     }
 
     public static function getInstance() {
@@ -26,6 +37,10 @@ class Database {
 
     public function getPdo() {
         return $this->pdo;
+    }
+
+    public function getDriver() {
+        return $this->driver;
     }
 
     public function query($sql, $params = []) {
@@ -62,30 +77,49 @@ class Database {
         return $this->query("DELETE FROM $table WHERE $where", $params)->rowCount();
     }
 
+    public function dateNow() {
+        return $this->driver === 'mysql' ? 'CURDATE()' : "date('now')";
+    }
+
+    public function dateSub($days) {
+        return $this->driver === 'mysql' ? "DATE_SUB(NOW(), INTERVAL $days DAY)" : "datetime('now', '-$days days')";
+    }
+
+    private function sql($sql) {
+        if ($this->driver === 'mysql') {
+            $sql = str_replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'INT AUTO_INCREMENT PRIMARY KEY', $sql);
+        }
+        $this->pdo->exec($sql);
+    }
+
     public function initSchema() {
-        $tables = $this->pdo->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_COLUMN);
+        if ($this->driver === 'mysql') {
+            $tables = $this->pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+        } else {
+            $tables = $this->pdo->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_COLUMN);
+        }
 
         if (!in_array('admin', $tables)) {
-            $this->pdo->exec("CREATE TABLE admin (
+            $this->sql("CREATE TABLE admin (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
+                username VARCHAR(255) UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )");
         }
 
         if (!in_array('site_content', $tables)) {
-            $this->pdo->exec("CREATE TABLE site_content (
+            $this->sql("CREATE TABLE site_content (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 page TEXT NOT NULL DEFAULT 'global',
-                key TEXT NOT NULL,
+                `key` TEXT NOT NULL,
                 value TEXT,
-                UNIQUE(page, key)
+                UNIQUE(page, `key`)
             )");
         }
 
         if (!in_array('service', $tables)) {
-            $this->pdo->exec("CREATE TABLE service (
+            $this->sql("CREATE TABLE service (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
                 description TEXT,
@@ -98,7 +132,7 @@ class Database {
         }
 
         if (!in_array('price_item', $tables)) {
-            $this->pdo->exec("CREATE TABLE price_item (
+            $this->sql("CREATE TABLE price_item (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 device_type TEXT NOT NULL,
                 brand TEXT NOT NULL,
@@ -111,7 +145,7 @@ class Database {
         }
 
         if (!in_array('partner_workshop', $tables)) {
-            $this->pdo->exec("CREATE TABLE partner_workshop (
+            $this->sql("CREATE TABLE partner_workshop (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 address TEXT NOT NULL,
@@ -125,21 +159,21 @@ class Database {
         }
 
         if (!in_array('contact_request', $tables)) {
-            $this->pdo->exec("CREATE TABLE contact_request (
+            $this->sql("CREATE TABLE contact_request (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 phone TEXT NOT NULL,
                 device_type TEXT,
                 device_model TEXT,
                 message TEXT,
-                status TEXT DEFAULT 'new',
+                status VARCHAR(50) DEFAULT 'new',
                 admin_notes TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )");
         }
 
         if (!in_array('page_view', $tables)) {
-            $this->pdo->exec("CREATE TABLE page_view (
+            $this->sql("CREATE TABLE page_view (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 path TEXT NOT NULL,
                 ip TEXT,
@@ -150,7 +184,7 @@ class Database {
                 lat REAL,
                 lng REAL,
                 screen TEXT,
-                language TEXT,
+                language VARCHAR(10),
                 utm_source TEXT,
                 utm_medium TEXT,
                 utm_campaign TEXT,
@@ -162,7 +196,7 @@ class Database {
         }
 
         if (!in_array('search_query', $tables)) {
-            $this->pdo->exec("CREATE TABLE search_query (
+            $this->sql("CREATE TABLE search_query (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 query TEXT,
                 device_type TEXT,
@@ -174,7 +208,7 @@ class Database {
         }
 
         if (!in_array('form_interaction', $tables)) {
-            $this->pdo->exec("CREATE TABLE form_interaction (
+            $this->sql("CREATE TABLE form_interaction (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 form_name TEXT NOT NULL,
                 action TEXT NOT NULL,
@@ -184,7 +218,7 @@ class Database {
         }
 
         if (!in_array('ip_location', $tables)) {
-            $this->pdo->exec("CREATE TABLE ip_location (
+            $this->sql("CREATE TABLE ip_location (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ip TEXT UNIQUE NOT NULL,
                 country TEXT,
@@ -198,7 +232,7 @@ class Database {
         }
 
         if (!in_array('mail_config', $tables)) {
-            $this->pdo->exec("CREATE TABLE mail_config (
+            $this->sql("CREATE TABLE mail_config (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 smtp_host TEXT DEFAULT '',
                 smtp_port INTEGER DEFAULT 587,
@@ -214,7 +248,7 @@ class Database {
         }
 
         if (!in_array('mail_template', $tables)) {
-            $this->pdo->exec("CREATE TABLE mail_template (
+            $this->sql("CREATE TABLE mail_template (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 subject TEXT NOT NULL,
@@ -224,9 +258,9 @@ class Database {
         }
 
         if (!in_array('app_setting', $tables)) {
-            $this->pdo->exec("CREATE TABLE app_setting (
+            $this->sql("CREATE TABLE app_setting (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                key TEXT UNIQUE NOT NULL,
+                `key` TEXT UNIQUE NOT NULL,
                 value TEXT,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )");

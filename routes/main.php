@@ -19,7 +19,7 @@ switch ($uri) {
         foreach ($categories as $cat) {
             $slug = $cat['category'];
             $services = Service::getByCategory($slug);
-            $services_by_cat[$slug] = $services;
+            $services_by_cat[$slug] = array_map(fn($s) => $s + ['name' => $s['title']], $services);
             $desc = !empty($services) ? $services[0]['description'] : '';
             $category_list[] = [
                 'id' => $slug,

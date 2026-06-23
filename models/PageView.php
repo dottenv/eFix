@@ -2,12 +2,12 @@
 class PageView {
     public static function countToday() {
         $db = Database::getInstance();
-        return $db->fetchColumn("SELECT COUNT(*) FROM page_view WHERE date(created_at) = date('now')");
+        return $db->fetchColumn("SELECT COUNT(*) FROM page_view WHERE date(created_at) = " . $db->dateNow());
     }
 
     public static function countUniqueToday() {
         $db = Database::getInstance();
-        return $db->fetchColumn("SELECT COUNT(DISTINCT session_id) FROM page_view WHERE date(created_at) = date('now')");
+        return $db->fetchColumn("SELECT COUNT(DISTINCT session_id) FROM page_view WHERE date(created_at) = " . $db->dateNow());
     }
 
     public static function countTotal() {
@@ -17,16 +17,19 @@ class PageView {
 
     public static function getSummary() {
         $db = Database::getInstance();
-        $today = $db->fetch("SELECT COUNT(*) as views, COUNT(DISTINCT session_id) as visitors FROM page_view WHERE date(created_at) = date('now')");
-        $week = $db->fetch("SELECT COUNT(*) as views, COUNT(DISTINCT session_id) as visitors FROM page_view WHERE created_at >= datetime('now', '-7 days')");
-        $month = $db->fetch("SELECT COUNT(*) as views, COUNT(DISTINCT session_id) as visitors FROM page_view WHERE created_at >= datetime('now', '-30 days')");
+        $today = $db->fetch("SELECT COUNT(*) as views, COUNT(DISTINCT session_id) as visitors FROM page_view WHERE date(created_at) = " . $db->dateNow());
+        $week = $db->fetch("SELECT COUNT(*) as views, COUNT(DISTINCT session_id) as visitors FROM page_view WHERE created_at >= " . $db->dateSub(7));
+        $month = $db->fetch("SELECT COUNT(*) as views, COUNT(DISTINCT session_id) as visitors FROM page_view WHERE created_at >= " . $db->dateSub(30));
         $total = $db->fetch("SELECT COUNT(*) as views, COUNT(DISTINCT session_id) as visitors FROM page_view");
         return ['today' => $today, 'week' => $week, 'month' => $month, 'total' => $total];
     }
 
     public static function getDailyViews($days = 30) {
         $db = Database::getInstance();
-        return $db->fetchAll("SELECT date(created_at) as date, COUNT(*) as views, COUNT(DISTINCT session_id) as visitors FROM page_view WHERE created_at >= datetime('now', '-{$days} days') GROUP BY date(created_at) ORDER BY date(created_at)");
+        $ds = $db->dateSub($days);
+        $dn = $db->dateNow();
+        $dateCol = $db->getDriver() === 'mysql' ? "DATE(created_at)" : "date(created_at)";
+        return $db->fetchAll("SELECT $dateCol as date, COUNT(*) as views, COUNT(DISTINCT session_id) as visitors FROM page_view WHERE created_at >= $ds GROUP BY $dateCol ORDER BY $dateCol");
     }
 
     public static function getTopPages($limit = 10) {

@@ -237,6 +237,7 @@ $php_ok = version_compare(PHP_VERSION, '8.0', '>=');
 $exts = ['pdo', 'pdo_sqlite', 'mbstring', 'json', 'session'];
 $ext_ok = true;
 foreach ($exts as $e) { if (!extension_loaded($e)) $ext_ok = false; }
+$pdo_mysql_ok = extension_loaded('pdo_mysql');
 $root_writable = is_writable(__DIR__);
 $htaccess_exists = file_exists(__DIR__ . '/.htaccess');
 $db_exists = file_exists(__DIR__ . '/efix.db');
@@ -252,6 +253,12 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $site_name = trim($_POST['site_name'] ?? 'eFix');
     $address = trim($_POST['address'] ?? '');
+    $db_type = $_POST['db_type'] ?? 'sqlite';
+    $db_host = trim($_POST['db_host'] ?? '');
+    $db_port = trim($_POST['db_port'] ?? '3306');
+    $db_name = trim($_POST['db_name'] ?? '');
+    $db_user = trim($_POST['db_user'] ?? '');
+    $db_pass = $_POST['db_pass'] ?? '';
 
     if (!$files_ok) {
         $error = 'Отсутствуют файлы проекта. Нажмите "Скачать с GitHub" выше.';
@@ -263,13 +270,25 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Пароль должен быть минимум 4 символа.';
     } elseif (!$secret) {
         $secret = generate_secret();
+    } elseif ($db_type === 'mysql') {
+        if (!$db_host || !$db_name || !$db_user) {
+            $error = 'Для MySQL заполните хост, имя БД и пользователя.';
+        } elseif (!extension_loaded('pdo_mysql')) {
+            $error = 'Расширение PHP pdo_mysql не установлено на сервере.';
+        }
     }
 
     if (!$error) {
         try {
             $env = "# eFix configuration\n";
             $env .= "SECRET_KEY={$secret}\n";
-            $env .= "DATABASE_URL=sqlite:" . __DIR__ . "/efix.db\n";
+            if ($db_type === 'mysql') {
+                $env .= "DATABASE_URL=mysql:host={$db_host};port={$db_port};dbname={$db_name};charset=utf8mb4\n";
+                $env .= "DB_USER={$db_user}\n";
+                $env .= "DB_PASS={$db_pass}\n";
+            } else {
+                $env .= "DATABASE_URL=sqlite:" . __DIR__ . "/efix.db\n";
+            }
             if ($phone) $env .= "SITE_PHONE={$phone}\n";
             file_put_contents(__DIR__ . '/.env', $env);
 
@@ -638,6 +657,11 @@ code {
                 <?php if (!extension_loaded('pdo_sqlite')): ?><span class="fail">Необходим для SQLite</span><?php endif ?>
             </li>
             <li>
+                <?= check_ext('pdo_mysql') ?>
+                <span class="label">PDO MySQL</span>
+                <?php if (!extension_loaded('pdo_mysql')): ?><span class="fail">Необходим для MySQL</span><?php endif ?>
+            </li>
+            <li>
                 <?= check_ext('mbstring') ?>
                 <span class="label">mbstring</span>
                 <?php if (!extension_loaded('mbstring')): ?><span class="fail">Необходим для работы с UTF-8</span><?php endif ?>
@@ -761,6 +785,59 @@ code {
                 <div class="hint">Короткий адрес для отображения в шапке и подвале</div>
             </div>
 
+            <h2 style="margin-top:24px">База данных</h2>
+
+            <div class="form-group">
+                <label>Тип базы данных</label>
+                <div style="display:flex;gap:16px;margin-top:8px">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500">
+                        <input type="radio" name="db_type" value="sqlite" checked onchange="toggleDbType()">
+                        SQLite (встроенная)
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500">
+                        <input type="radio" name="db_type" value="mysql" onchange="toggleDbType()"
+                            <?= $pdo_mysql_ok ? '' : 'disabled' ?>>
+                        MySQL / MariaDB (удалённая)
+                    </label>
+                </div>
+                <?php if (!$pdo_mysql_ok): ?>
+                <div class="hint" style="color:var(--danger)">Расширение pdo_mysql не найдено на сервере</div>
+                <?php endif ?>
+            </div>
+
+            <div id="mysql-fields" style="display:none">
+                <div class="row">
+                    <div class="form-group" style="flex:2">
+                        <label for="db_host">Хост *</label>
+                        <input type="text" id="db_host" name="db_host" value="localhost" placeholder="localhost">
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label for="db_port">Порт</label>
+                        <input type="text" id="db_port" name="db_port" value="3306" placeholder="3306">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="db_name">Имя базы данных *</label>
+                    <input type="text" id="db_name" name="db_name" placeholder="efix_db">
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="db_user">Пользователь *</label>
+                        <input type="text" id="db_user" name="db_user" placeholder="root">
+                    </div>
+                    <div class="form-group">
+                        <label for="db_pass">Пароль</label>
+                        <div class="password-wrap">
+                            <input type="password" id="db_pass" name="db_pass" placeholder="пароль">
+                            <button type="button" class="toggle-pass" data-toggle="db_pass" aria-label="Показать пароль" tabindex="-1">&#128065;</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="warning" style="margin-top:8px">
+                    База данных должна существовать. Установщик только создаст таблицы.
+                </div>
+            </div>
+
             <h2 style="margin-top:24px">Администратор</h2>
 
             <div class="form-group" id="fg-user">
@@ -813,6 +890,14 @@ code {
 </div>
 
 <script>
+function toggleDbType() {
+    var mysqlFields = document.getElementById('mysql-fields');
+    if (!mysqlFields) return;
+    var mysqlRadio = document.querySelector('input[name="db_type"][value="mysql"]');
+    mysqlFields.style.display = (mysqlRadio && mysqlRadio.checked) ? 'block' : 'none';
+}
+toggleDbType();
+
 (function() {
     // Password show/hide
     document.querySelectorAll('.toggle-pass').forEach(function(btn) {

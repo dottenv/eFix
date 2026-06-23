@@ -15,4 +15,6 @@ if (file_exists($envFile)) {
 
 define('SECRET_KEY', getenv('SECRET_KEY') ?: 'eFix-secret-key-2024');
 define('DATABASE_URL', getenv('DATABASE_URL') ?: 'sqlite:' . __DIR__ . '/efix.db');
+define('DB_USER', getenv('DB_USER') ?: '');
+define('DB_PASS', getenv('DB_PASS') ?: '');
 define('SITE_NAME', 'eFix');
