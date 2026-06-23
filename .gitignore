@@ -1,0 +1,6 @@
+*.db
+*.db-journal
+.env
+efix.db
+.DS_Store
+Thumbs.db
