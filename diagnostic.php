@@ -47,15 +47,17 @@ test('Режим PHP', true, $sapi);
 test('Корень доступен для записи', is_writable(__DIR__), is_writable(__DIR__) ? 'да' : 'НЕТ');
 
 $key_files = [
-    'index.php', 'config.php', 'database.php', 'helpers.php', 'render.php', 'hooks.php',
+    'index.php', 'install.php', 'update.php',
     '.htaccess', '.env' => file_exists(__DIR__ . '/.env') ? 'ok' : 'not_found',
 ];
 $all_project_files = [
-    'models/Admin.php', 'models/SiteContent.php', 'models/Service.php',
-    'models/PriceItem.php', 'models/PartnerWorkshop.php', 'models/ContactRequest.php',
-    'models/PageView.php', 'models/SearchQuery.php', 'models/IpLocation.php',
-    'models/FormInteraction.php', 'models/MailConfig.php', 'models/MailTemplate.php',
-    'models/AppSetting.php',
+    'app/Config.php', 'app/Database.php', 'app/Helpers.php',
+    'app/Hooks.php', 'app/Render.php', 'app/Router.php',
+    'app/Models/Admin.php', 'app/Models/SiteContent.php', 'app/Models/Service.php',
+    'app/Models/PriceItem.php', 'app/Models/PartnerWorkshop.php', 'app/Models/ContactRequest.php',
+    'app/Models/PageView.php', 'app/Models/SearchQuery.php', 'app/Models/IpLocation.php',
+    'app/Models/FormInteraction.php', 'app/Models/MailConfig.php', 'app/Models/MailTemplate.php',
+    'app/Models/AppSetting.php',
     'routes/main.php', 'routes/api.php', 'routes/admin.php',
     'templates/base.php', 'templates/index.php', 'templates/services.php',
     'templates/prices.php', 'templates/about.php', 'templates/contacts.php',
@@ -78,7 +80,7 @@ foreach ($all_project_files as $f) {
 test('Файлы проекта (' . (count($all_project_files) - count($missing)) . '/' . count($all_project_files) . ')', empty($missing), empty($missing) ? 'все на месте' : 'отсутствуют: ' . implode(', ', $missing));
 
 // Check directory structure
-$required_dirs = ['models', 'routes', 'templates', 'templates/admin', 'static', 'static/css', 'static/js'];
+$required_dirs = ['app', 'app/Models', 'modules', 'modules/install', 'modules/install/views', 'modules/install/actions', 'routes', 'templates', 'templates/admin', 'static', 'static/css', 'static/js'];
 $missing_dirs = [];
 foreach ($required_dirs as $d) {
     if (!is_dir(__DIR__ . '/' . $d)) $missing_dirs[] = $d;
@@ -116,8 +118,8 @@ if (file_exists($db_file) && extension_loaded('pdo') && extension_loaded('pdo_sq
 }
 if ($dbOk) {
     try {
-        require_once __DIR__ . '/config.php';
-        require_once __DIR__ . '/database.php';
+        require_once __DIR__ . '/app/Config.php';
+        require_once __DIR__ . '/app/Database.php';
         $db = Database::getInstance();
         $pdo = $db->getPdo();
         test('Подключение к БД', true, $db->getDriver() . ' — успешно');

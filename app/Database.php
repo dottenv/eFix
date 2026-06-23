@@ -35,13 +35,8 @@ class Database {
         return self::$instance;
     }
 
-    public function getPdo() {
-        return $this->pdo;
-    }
-
-    public function getDriver() {
-        return $this->driver;
-    }
+    public function getPdo() { return $this->pdo; }
+    public function getDriver() { return $this->driver; }
 
     public function query($sql, $params = []) {
         $stmt = $this->pdo->prepare($sql);
@@ -270,7 +265,6 @@ class Database {
     }
 
     private function seedData() {
-        // Seed services
         $count = $this->fetchColumn("SELECT COUNT(*) FROM service");
         if ($count == 0) {
             $services = [
@@ -309,7 +303,6 @@ class Database {
             }
         }
 
-        // Seed price items
         $count = $this->fetchColumn("SELECT COUNT(*) FROM price_item");
         if ($count == 0) {
             $prices = [
@@ -357,7 +350,6 @@ class Database {
             }
         }
 
-        // Seed workshops
         $count = $this->fetchColumn("SELECT COUNT(*) FROM partner_workshop");
         if ($count == 0) {
             $workshops = [

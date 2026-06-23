@@ -1,10 +1,9 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-$max = 6; $step = 0;
-try {
-    $step++; echo json_encode(['p' => round($step/$max*100), 'm' => 'Скачиваю архив с GitHub...']); ob_flush(); flush();
 
+try {
     $zip_data = false;
+
     if (ini_get('allow_url_fopen')) $zip_data = @file_get_contents(GITHUB_ZIP);
     if ($zip_data === false && function_exists('curl_init')) {
         $ch = curl_init(GITHUB_ZIP);
@@ -15,8 +14,6 @@ try {
     }
     if ($zip_data === false) throw new Exception('Не удалось скачать архив');
 
-    $step++; echo json_encode(['p' => round($step/$max*100), 'm' => 'Распаковываю...']); ob_flush(); flush();
-
     $tmp_zip = __DIR__ . '/../../_efix_tmp.zip';
     $tmp_dir = __DIR__ . '/../../_efix_tmp';
     file_put_contents($tmp_zip, $zip_data);
@@ -24,8 +21,6 @@ try {
     $zip = new ZipArchive();
     if ($zip->open($tmp_zip) !== true) throw new Exception('Не удалось открыть ZIP');
     $zip->extractTo($tmp_dir); $zip->close(); @unlink($tmp_zip);
-
-    $step++; echo json_encode(['p' => round($step/$max*100), 'm' => 'Копирую файлы...']); ob_flush(); flush();
 
     $entries = scandir($tmp_dir);
     $extracted = null;
@@ -47,11 +42,9 @@ try {
     }
     @rrmdir($tmp_dir);
 
-    $step++; echo json_encode(['p' => round($step/$max*100), 'm' => "Скопировано $copied файлов"]); ob_flush(); flush();
-    $step++; echo json_encode(['p' => round($step/$max*100), 'm' => 'Проверяю...']); ob_flush(); flush();
     $still = missing_files();
     if (empty($still)) {
-        $step++; echo json_encode(['p' => 100, 'm' => 'Готово!', 'done' => true]);
+        echo json_encode(['p' => 100, 'm' => "Скопировано $copied файлов", 'done' => true]);
     } else {
         throw new Exception('Некоторые файлы не скопировались: ' . implode(', ', $still));
     }

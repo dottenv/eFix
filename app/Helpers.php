@@ -91,7 +91,7 @@ function notFound() {
 
 function getSiteContent() {
     $db = Database::getInstance();
-    $rows = $db->fetchAll("SELECT key, value FROM site_content");
+    $rows = $db->fetchAll("SELECT `key`, value FROM site_content");
     $result = [];
     foreach ($rows as $r) {
         $result[$r['key']] = $r['value'];

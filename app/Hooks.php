@@ -11,9 +11,9 @@ function render_hook($name, $ctx = []) {
     $parts = [];
     foreach ($_hook_registry[$name] ?? [] as $tpl) {
         ob_start();
-        if (file_exists(__DIR__ . '/templates/' . $tpl)) {
+        if (file_exists(__DIR__ . '/../templates/' . $tpl)) {
             extract($ctx);
-            include __DIR__ . '/templates/' . $tpl;
+            include __DIR__ . '/../templates/' . $tpl;
         }
         $parts[] = ob_get_clean();
     }

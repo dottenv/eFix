@@ -307,31 +307,25 @@ function startDownload() {
     var btn = document.getElementById('downloadBtn');
     var icon = document.getElementById('dlIcon');
     var text = document.getElementById('dlText');
-    var prog = document.getElementById('dlProgressWrap');
-    var bar = document.getElementById('dlProgressBar');
     var status = document.getElementById('dlStatus');
     var nextBtn = document.getElementById('step2next');
 
     btn.disabled = true;
     text.textContent = 'Скачиваю...';
     icon.style.display = 'inline-block';
-    prog.style.display = 'block';
 
     fetch('?action=download')
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            bar.style.width = (data.p || 0) + '%';
-            status.textContent = data.m || '';
+            icon.style.display = 'none';
             if (data.done) {
-                icon.style.display = 'none';
                 text.textContent = 'Готово!';
-                btn.className = 'btn btn--secondary btn--full';
+                status.textContent = data.m || '';
                 nextBtn.disabled = false;
                 setTimeout(function() { goStep(3); }, 800);
-            } else if (data.error) {
-                icon.style.display = 'none';
+            } else {
                 text.textContent = 'Ошибка';
-                status.innerHTML = '<span style="color:var(--danger)">' + data.m + '</span>';
+                status.innerHTML = '<span style="color:var(--danger)">' + (data.m || 'Неизвестная ошибка') + '</span>';
                 btn.disabled = false;
                 btn.className = 'btn btn--primary btn--full';
                 text.textContent = 'Повторить';

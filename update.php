@@ -182,8 +182,8 @@ if ($step === 'run') {
     // Re-run DB schema (adds new tables if any)
     echo "\n4. Обновляю структуру БД...\n";
     try {
-        require_once __DIR__ . '/config.php';
-        require_once __DIR__ . '/database.php';
+        require_once __DIR__ . '/app/Config.php';
+        require_once __DIR__ . '/app/Database.php';
         $db = Database::getInstance();
         $db->initSchema();
         echo "   База данных в актуальном состоянии.\n";
@@ -220,12 +220,17 @@ if (file_exists(__DIR__ . '/efix.db')) {
 }
 // Count project files
 $PROJECT_FILES = [
-    'config.php', 'database.php', 'helpers.php', 'hooks.php', 'render.php', 'index.php',
-    'models/Admin.php', 'models/SiteContent.php', 'models/Service.php',
-    'models/PriceItem.php', 'models/PartnerWorkshop.php', 'models/ContactRequest.php',
-    'models/PageView.php', 'models/SearchQuery.php', 'models/IpLocation.php',
-    'models/FormInteraction.php', 'models/MailConfig.php', 'models/MailTemplate.php',
-    'models/AppSetting.php',
+    'index.php', 'install.php', 'update.php',
+    'app/Config.php', 'app/Database.php', 'app/Helpers.php',
+    'app/Hooks.php', 'app/Render.php', 'app/Router.php',
+    'app/Models/Admin.php', 'app/Models/SiteContent.php', 'app/Models/Service.php',
+    'app/Models/PriceItem.php', 'app/Models/PartnerWorkshop.php', 'app/Models/ContactRequest.php',
+    'app/Models/PageView.php', 'app/Models/SearchQuery.php', 'app/Models/IpLocation.php',
+    'app/Models/FormInteraction.php', 'app/Models/MailConfig.php', 'app/Models/MailTemplate.php',
+    'app/Models/AppSetting.php',
+    'modules/install/common.php', 'modules/install/init.php',
+    'modules/install/views/layout.php',
+    'modules/install/actions/download.php', 'modules/install/actions/install.php',
     'routes/main.php', 'routes/api.php', 'routes/admin.php',
     'templates/base.php', 'templates/index.php', 'templates/404.php',
     'static/css/style.css', 'static/js/main.js',

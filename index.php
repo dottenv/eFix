@@ -6,25 +6,25 @@ if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off') {
     exit;
 }
 
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/database.php';
-require_once __DIR__ . '/helpers.php';
-require_once __DIR__ . '/hooks.php';
-require_once __DIR__ . '/render.php';
+require_once __DIR__ . '/app/Config.php';
+require_once __DIR__ . '/app/Database.php';
+require_once __DIR__ . '/app/Helpers.php';
+require_once __DIR__ . '/app/Hooks.php';
+require_once __DIR__ . '/app/Render.php';
 require_once __DIR__ . '/app/Router.php';
-require_once __DIR__ . '/models/Admin.php';
-require_once __DIR__ . '/models/SiteContent.php';
-require_once __DIR__ . '/models/Service.php';
-require_once __DIR__ . '/models/PriceItem.php';
-require_once __DIR__ . '/models/PartnerWorkshop.php';
-require_once __DIR__ . '/models/ContactRequest.php';
-require_once __DIR__ . '/models/PageView.php';
-require_once __DIR__ . '/models/SearchQuery.php';
-require_once __DIR__ . '/models/IpLocation.php';
-require_once __DIR__ . '/models/FormInteraction.php';
-require_once __DIR__ . '/models/MailConfig.php';
-require_once __DIR__ . '/models/MailTemplate.php';
-require_once __DIR__ . '/models/AppSetting.php';
+require_once __DIR__ . '/app/Models/Admin.php';
+require_once __DIR__ . '/app/Models/SiteContent.php';
+require_once __DIR__ . '/app/Models/Service.php';
+require_once __DIR__ . '/app/Models/PriceItem.php';
+require_once __DIR__ . '/app/Models/PartnerWorkshop.php';
+require_once __DIR__ . '/app/Models/ContactRequest.php';
+require_once __DIR__ . '/app/Models/PageView.php';
+require_once __DIR__ . '/app/Models/SearchQuery.php';
+require_once __DIR__ . '/app/Models/IpLocation.php';
+require_once __DIR__ . '/app/Models/FormInteraction.php';
+require_once __DIR__ . '/app/Models/MailConfig.php';
+require_once __DIR__ . '/app/Models/MailTemplate.php';
+require_once __DIR__ . '/app/Models/AppSetting.php';
 
 $db = Database::getInstance();
 $db->initSchema();

@@ -3,7 +3,7 @@ $DEVICE_TYPES = ['phone' => 'Телефоны', 'tablet' => 'Планшеты', 
 
 function render_raw($template, $vars = [], $exit = true) {
     extract($vars);
-    $templateFile = __DIR__ . '/templates/' . $template . '.php';
+    $templateFile = __DIR__ . '/../templates/' . $template . '.php';
     if (file_exists($templateFile)) {
         include $templateFile;
     } else {
@@ -15,7 +15,7 @@ function render_raw($template, $vars = [], $exit = true) {
 function render($template, $vars = []) {
     $vars['sc'] = getSiteContent();
     extract($vars);
-    $templateFile = __DIR__ . '/templates/' . $template . '.php';
+    $templateFile = __DIR__ . '/../templates/' . $template . '.php';
     if (file_exists($templateFile)) {
         include $templateFile;
     } else {
@@ -28,7 +28,7 @@ function render_admin($template, $vars = []) {
     global $site_name;
     extract($vars);
     $site_name = $site_name ?? 'eFix';
-    $templateFile = __DIR__ . '/templates/admin/' . $template . '.php';
+    $templateFile = __DIR__ . '/../templates/admin/' . $template . '.php';
     if (file_exists($templateFile)) {
         include $templateFile;
     } else {

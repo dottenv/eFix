@@ -32,14 +32,14 @@ try {
     if ($phone) $env .= "SITE_PHONE={$phone}\n";
     file_put_contents(__DIR__ . '/../../.env', $env);
 
-    require_once __DIR__ . '/../../config.php';
-    require_once __DIR__ . '/../../database.php';
-    require_once __DIR__ . '/../../helpers.php';
-    require_once __DIR__ . '/../../hooks.php';
-    require_once __DIR__ . '/../../render.php';
+    require_once __DIR__ . '/../../app/Config.php';
+    require_once __DIR__ . '/../../app/Database.php';
+    require_once __DIR__ . '/../../app/Helpers.php';
+    require_once __DIR__ . '/../../app/Hooks.php';
+    require_once __DIR__ . '/../../app/Render.php';
     require_once __DIR__ . '/../../app/Router.php';
     foreach (PROJECT_FILES as $f) {
-        if (str_starts_with($f, 'models/')) require_once __DIR__ . '/../../' . $f;
+        if (str_starts_with($f, 'app/')) require_once __DIR__ . '/../../' . $f;
     }
 
     $db = Database::getInstance();
