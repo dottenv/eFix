@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# Не переписывать, если уже в public/
+RewriteRule ^public($|/) - [L]
+
+# Всё остальное — в public/
+RewriteRule ^(.*)$ public/$1 [L]
