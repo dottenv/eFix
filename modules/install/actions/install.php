@@ -33,16 +33,17 @@ try {
     if ($phone) $env .= "SITE_PHONE={$phone}\n";
     file_put_contents(__DIR__ . '/../../.env', $env);
 
-    require_once __DIR__ . '/../../app/Config.php';
-    require_once __DIR__ . '/../../app/Database.php';
-    require_once __DIR__ . '/../../app/Helpers.php';
-    require_once __DIR__ . '/../../app/Hooks.php';
-    require_once __DIR__ . '/../../app/Render.php';
-    require_once __DIR__ . '/../../app/Router.php';
-    foreach (PROJECT_FILES as $f) {
-        if (str_starts_with($f, 'app/')) require_once __DIR__ . '/../../' . $f;
+    // Re-read .env by directly setting env vars
+    $envLines = file(__DIR__ . '/../../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($envLines as $line) {
+        if (str_starts_with(trim($line), '#')) continue;
+        if (str_contains($line, '=')) {
+            [$k, $v] = explode('=', $line, 2);
+            putenv(trim($k) . '=' . trim($v));
+        }
     }
 
+    Database::resetInstance();
     $db = Database::getInstance();
     $db->initSchema();
 

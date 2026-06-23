@@ -5,14 +5,14 @@ class Database {
     private $driver;
 
     private function __construct() {
-        $dsn = DATABASE_URL;
+        $dsn = getenv('DATABASE_URL') ?: DATABASE_URL;
         $this->driver = str_starts_with($dsn, 'sqlite:') ? 'sqlite' : (str_starts_with($dsn, 'mysql:') ? 'mysql' : 'other');
 
         if ($this->driver === 'sqlite') {
             $path = substr($dsn, 7);
             $this->pdo = new PDO('sqlite:' . $path);
-        } elseif (DB_USER) {
-            $this->pdo = new PDO($dsn, DB_USER, DB_PASS);
+        } elseif (getenv('DB_USER')) {
+            $this->pdo = new PDO($dsn, getenv('DB_USER'), getenv('DB_PASS') ?: '');
         } else {
             $this->pdo = new PDO($dsn);
         }
@@ -33,6 +33,10 @@ class Database {
             self::$instance = new self();
         }
         return self::$instance;
+    }
+
+    public static function resetInstance() {
+        self::$instance = null;
     }
 
     public function getPdo() { return $this->pdo; }
