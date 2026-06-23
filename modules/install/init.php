@@ -13,6 +13,12 @@ if ($action === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+if ($action === 'install') {
+    http_response_code(405);
+    echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
+    exit;
+}
+
 $checks = [];
 $checks[] = ['id' => 'phpver', 'label' => 'PHP ≥ 8.0', 'ok' => version_compare(PHP_VERSION, '8.0', '>='), 'detail' => PHP_VERSION];
 $extList = ['pdo','pdo_sqlite','pdo_mysql','mbstring','json','session','zip'];

@@ -1,4 +1,5 @@
 <?php
+while (ob_get_level()) ob_end_clean();
 header('Content-Type: application/json; charset=utf-8');
 try {
     $admin_user = trim($_POST['admin_user'] ?? '');
@@ -70,6 +71,6 @@ try {
     }
 
     echo json_encode(['ok' => true, 'message' => "Установка завершена!", 'admin_user' => $admin_user]);
-} catch (Exception $e) {
+} catch (Throwable $e) {
     echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
 }
