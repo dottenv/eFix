@@ -17,7 +17,6 @@ const EFIX_VERSION = '1.0.0';
 
 $isCli = (php_sapi_name() === 'cli');
 $output = '';
-$errors = [];
 
 function out(string $msg, string $type = 'info'): void
 {
@@ -308,10 +307,39 @@ function runMigrations(PDO $pdo): void
         foreach ($statements as $stmt) {
             $stmt = trim($stmt);
             if ($stmt !== '') {
-                $pdo->exec($stmt);
+                try {
+                    $pdo->exec($stmt);
+                } catch (PDOException $e) {
+                    out("Предупреждение в " . basename($file) . ": " . $e->getMessage(), 'warning');
+                }
             }
         }
         out("Миграция " . basename($file) . " — OK", 'success');
+    }
+
+    ensureAdminSchema($pdo);
+}
+
+function ensureAdminSchema(PDO $pdo): void
+{
+    try {
+        $result = $pdo->query("SHOW COLUMNS FROM admins LIKE 'role'");
+        if (!$result || !$result->fetch()) {
+            $pdo->exec("ALTER TABLE admins ADD COLUMN `role` ENUM('admin', 'manager') NOT NULL DEFAULT 'admin' AFTER `password_hash`");
+            out("Добавлена колонка role в таблицу admins", 'success');
+        }
+    } catch (PDOException $e) {
+        out("Проверка схемы admins: " . $e->getMessage(), 'warning');
+    }
+
+    try {
+        $result = $pdo->query("SHOW COLUMNS FROM admins LIKE 'created_at'");
+        if (!$result || !$result->fetch()) {
+            $pdo->exec("ALTER TABLE admins ADD COLUMN `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `role`");
+            out("Добавлена колонка created_at в таблицу admins", 'success');
+        }
+    } catch (PDOException $e) {
+        out("Проверка схемы admins: " . $e->getMessage(), 'warning');
     }
 }
 
@@ -319,10 +347,23 @@ function createAdmin(PDO $pdo, string $username, string $password): void
 {
     $hash = password_hash($password, PASSWORD_BCRYPT);
 
-    $check = $pdo->prepare("SELECT id FROM admins WHERE username = ?");
-    $check->execute([$username]);
+    try {
+        $check = $pdo->prepare("SELECT id FROM admins WHERE username = ?");
+        $check->execute([$username]);
+        $exists = (bool) $check->fetch();
+    } catch (PDOException $e) {
+        out("Ошибка при проверке администратора: " . $e->getMessage(), 'warning');
+        $pdo->exec("CREATE TABLE IF NOT EXISTS admins (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            role ENUM('admin', 'manager') NOT NULL DEFAULT 'admin',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $exists = false;
+    }
 
-    if ($check->fetch()) {
+    if ($exists) {
         $pdo->prepare("UPDATE admins SET password_hash = ? WHERE username = ?")->execute([$hash, $username]);
         out("Пароль администратора обновлён", 'success');
     } else {
