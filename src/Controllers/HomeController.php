@@ -2,45 +2,44 @@
 
 namespace App\Controllers;
 
-use App\Core\View;
+use App\Core\Controller\AbstractController;
 use App\Core\Request;
+use App\Repositories\ServiceRepository;
+use App\Repositories\PageRepository;
 
-class HomeController
+class HomeController extends AbstractController
 {
-    private View $view;
-
-    public function __construct()
+    public function index(Request $request): \App\Core\Response
     {
-        $this->view = new View();
+        $serviceRepo = new ServiceRepository();
+        $pageRepo = new PageRepository();
+
+        $services = $serviceRepo->findAllActive();
+        $hero = $pageRepo->findBySection('hero');
+        $advantages = $pageRepo->findBySection('advantages');
+        $reviews = $pageRepo->findBySection('reviews');
+        $contacts = $pageRepo->findBySection('contacts');
+
+        $data = [
+            'services' => $services,
+            'hero' => $hero[0] ?? null,
+            'advantages' => $advantages,
+            'reviews' => $reviews,
+            'contacts' => $contacts,
+        ];
+
+        return $this->render('pages/home', $data, 'layouts/main');
     }
 
-    public function index(): string
+    public function service(Request $request, string $slug): \App\Core\Response
     {
-        $content = $this->view->render('pages/home');
+        $serviceRepo = new ServiceRepository();
+        $service = $serviceRepo->findBySlug($slug);
 
-        if (Request::isHtmx()) {
-            return $content;
+        if (!$service) {
+            return $this->render('pages/404', [], 'layouts/main')->setStatusCode(404);
         }
 
-        return $this->view->layout('main', $content, [
-            'title' => 'eFix — Ремонт цифровой техники',
-            'metaDescription' => 'Выездной сервисный центр по ремонту телефонов, планшетов, ноутбуков и ПК',
-        ]);
-    }
-
-    public function notFound(): string
-    {
-        http_response_code(404);
-        $content = $this->view->render('pages/404', [
-            'title' => 'Страница не найдена',
-        ]);
-
-        if (Request::isHtmx()) {
-            return $content;
-        }
-
-        return $this->view->layout('main', $content, [
-            'title' => '404 — eFix',
-        ]);
+        return $this->render('pages/service', ['service' => $service], 'layouts/main');
     }
 }

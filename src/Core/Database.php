@@ -2,42 +2,100 @@
 
 namespace App\Core;
 
-use PDO;
-
 class Database
 {
-    private static ?PDO $instance = null;
+    private static ?Database $instance = null;
+    private \PDO $pdo;
 
-    public static function connect(array $config): PDO
+    private function __construct(array $config)
     {
-        if (self::$instance !== null) {
-            return self::$instance;
-        }
-
         $dsn = sprintf(
-            '%s:host=%s;port=%s;dbname=%s;charset=%s',
-            $config['driver'],
+            'mysql:host=%s;port=%s;dbname=%s;charset=%s',
             $config['host'],
             $config['port'],
-            $config['database'],
-            $config['charset']
+            $config['dbname'],
+            $config['charset'] ?? 'utf8mb4'
         );
 
-        self::$instance = new PDO($dsn, $config['username'], $config['password'], [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
+        $this->pdo = new \PDO($dsn, $config['username'], $config['password'], [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            \PDO::ATTR_EMULATE_PREPARES => false,
         ]);
+    }
 
+    public static function init(array $config): void
+    {
+        self::$instance = new self($config);
+    }
+
+    public static function instance(): self
+    {
+        if (self::$instance === null) {
+            throw new \RuntimeException('Database not initialized. Call Database::init() first.');
+        }
         return self::$instance;
     }
 
-    public static function db(): PDO
+    public function pdo(): \PDO
     {
-        if (self::$instance === null) {
-            $config = require __DIR__ . '/../../config/app.php';
-            self::connect($config['db']);
-        }
-        return self::$instance;
+        return $this->pdo;
+    }
+
+    public function query(string $sql, array $params = []): \PDOStatement
+    {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt;
+    }
+
+    public function fetchAll(string $sql, array $params = []): array
+    {
+        return $this->query($sql, $params)->fetchAll();
+    }
+
+    public function fetchOne(string $sql, array $params = []): ?array
+    {
+        $result = $this->query($sql, $params)->fetch();
+        return $result ?: null;
+    }
+
+    public function insert(string $table, array $data): int
+    {
+        $columns = implode(', ', array_keys($data));
+        $placeholders = implode(', ', array_fill(0, count($data), '?'));
+        $sql = "INSERT INTO {$table} ({$columns}) VALUES ({$placeholders})";
+        $this->query($sql, array_values($data));
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    public function update(string $table, array $data, string $where, array $whereParams = []): int
+    {
+        $sets = implode(', ', array_map(fn($col) => "{$col} = ?", array_keys($data)));
+        $sql = "UPDATE {$table} SET {$sets} WHERE {$where}";
+        $stmt = $this->query($sql, array_merge(array_values($data), $whereParams));
+        return $stmt->rowCount();
+    }
+
+    public function delete(string $table, string $where, array $params = []): int
+    {
+        $sql = "DELETE FROM {$table} WHERE {$where}";
+        $stmt = $this->query($sql, $params);
+        return $stmt->rowCount();
+    }
+
+    public function beginTransaction(): void
+    {
+        $this->pdo->beginTransaction();
+    }
+
+    public function commit(): void
+    {
+        $this->pdo->commit();
+    }
+
+    public function rollback(): void
+    {
+        $this->pdo->rollBack();
     }
 }

@@ -7,53 +7,57 @@ class Router
     private array $routes = [];
     private array $globalMiddleware = [];
 
-    public function add(string $method, string $path, array $handler, array $middleware = []): void
+    public function addGlobalMiddleware(callable|array|object $middleware): void
     {
-        $this->routes[] = compact('method', 'path', 'handler', 'middleware');
+        $this->globalMiddleware[] = $middleware;
     }
 
-    public function addGlobalMiddleware(callable $mw): void
+    public function add(string $method, string $pattern, callable|array $handler, array $middleware = []): void
     {
-        $this->globalMiddleware[] = $mw;
+        $pattern = preg_replace('/\{(\w+)\}/', '(?P<$1>[^/]+)', $pattern);
+        $this->routes[] = [
+            'method' => strtoupper($method),
+            'pattern' => '#^' . $pattern . '$#',
+            'handler' => $handler,
+            'middleware' => $middleware,
+        ];
     }
 
-    public function loadRoutes(array $routes): void
+    public function get(string $pattern, callable|array $handler, array $middleware = []): void
     {
-        foreach ($routes as $path => [$controller, $action]) {
-            $this->add('GET', $path, [$controller, $action]);
-        }
+        $this->add('GET', $pattern, $handler, $middleware);
     }
 
-    public function dispatch(string $method, string $uri): void
+    public function post(string $pattern, callable|array $handler, array $middleware = []): void
     {
-        $uri = parse_url($uri, PHP_URL_PATH);
-        $uri = rtrim($uri, '/') ?: '/';
+        $this->add('POST', $pattern, $handler, $middleware);
+    }
 
-        foreach ($this->globalMiddleware as $mw) {
-            $mw();
-        }
+    public function any(string $pattern, callable|array $handler, array $middleware = []): void
+    {
+        $this->add('GET', $pattern, $handler, $middleware);
+        $this->add('POST', $pattern, $handler, $middleware);
+    }
+
+    public function dispatch(Request $request): array
+    {
+        $method = $request->method();
+        $uri = $request->uri();
 
         foreach ($this->routes as $route) {
-            $pattern = preg_replace('/\{(\w+)\}/', '(?P<$1>[^/]+)', $route['path']);
-            $pattern = '#^' . $pattern . '$#';
-
-            if ($route['method'] !== $method || !preg_match($pattern, $uri, $matches)) {
+            if ($route['method'] !== $method) {
                 continue;
             }
-
-            foreach ($route['middleware'] as $mw) {
-                $mw();
+            if (preg_match($route['pattern'], $uri, $matches)) {
+                $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+                return [
+                    'handler' => $route['handler'],
+                    'params' => $params,
+                    'middleware' => array_merge($this->globalMiddleware, $route['middleware']),
+                ];
             }
-
-            [$controller, $action] = $route['handler'];
-            $controllerClass = 'App\\Controllers\\' . $controller;
-            $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
-
-            echo (new $controllerClass)->$action(...$params);
-            return;
         }
 
-        http_response_code(404);
-        echo (new \App\Controllers\HomeController)->notFound();
+        return [];
     }
 }

@@ -4,55 +4,129 @@ namespace App\Core;
 
 class Request
 {
-    public static function method(): string
+    private array $query;
+    private array $body;
+    private array $files;
+    private array $server;
+    private array $cookies;
+    private array $headers;
+    private array $attributes;
+
+    public function __construct()
     {
-        return $_SERVER['REQUEST_METHOD'];
+        $this->query = $_GET;
+        $this->body = $_POST;
+        $this->files = $_FILES;
+        $this->server = $_SERVER;
+        $this->cookies = $_COOKIE;
+        $this->headers = $this->extractHeaders();
+        $this->attributes = [];
+
+        $this->parseJsonBody();
     }
 
-    public static function uri(): string
+    private function extractHeaders(): array
     {
-        return $_SERVER['REQUEST_URI'];
+        $headers = [];
+        foreach ($this->server as $key => $value) {
+            if (str_starts_with($key, 'HTTP_')) {
+                $header = str_replace('_', '-', substr($key, 5));
+                $headers[$header] = $value;
+            }
+        }
+        return $headers;
     }
 
-    public static function isHtmx(): bool
+    private function parseJsonBody(): void
     {
-        return ($_SERVER['HTTP_HX_REQUEST'] ?? '') === 'true';
+        $contentType = $this->header('Content-Type', '');
+        if (str_contains($contentType, 'application/json')) {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true);
+            if (is_array($data)) {
+                $this->body = array_merge($this->body, $data);
+            }
+        }
     }
 
-    public static function isPost(): bool
+    public function method(): string
     {
-        return self::method() === 'POST';
+        return strtoupper($this->server['REQUEST_METHOD']);
     }
 
-    public static function input(string $key, mixed $default = null): mixed
+    public function uri(): string
     {
-        return $_POST[$key] ?? $default;
+        $uri = parse_url($this->server['REQUEST_URI'], PHP_URL_PATH);
+        return rtrim($uri, '/') ?: '/';
     }
 
-    public static function query(string $key, mixed $default = null): mixed
+    public function query(string $key, mixed $default = null): mixed
     {
-        return $_GET[$key] ?? $default;
+        return $this->query[$key] ?? $default;
     }
 
-    public static function ip(): string
+    public function allQuery(): array
     {
-        return $_SERVER['HTTP_X_FORWARDED_FOR']
-            ?? $_SERVER['REMOTE_ADDR']
-            ?? '0.0.0.0';
+        return $this->query;
     }
 
-    public static function userAgent(): string
+    public function body(string $key, mixed $default = null): mixed
     {
-        return $_SERVER['HTTP_USER_AGENT'] ?? '';
+        return $this->body[$key] ?? $default;
     }
 
-    public static function referer(): string
+    public function allBody(): array
     {
-        return $_SERVER['HTTP_REFERER'] ?? '';
+        return $this->body;
     }
 
-    public static function json(): array
+    public function file(string $key): ?array
     {
-        return json_decode(file_get_contents('php://input'), true) ?? [];
+        return $this->files[$key] ?? null;
+    }
+
+    public function cookie(string $key, mixed $default = null): mixed
+    {
+        return $this->cookies[$key] ?? $default;
+    }
+
+    public function header(string $key, mixed $default = null): mixed
+    {
+        return $this->headers[strtoupper($key)] ?? $default;
+    }
+
+    public function server(string $key, mixed $default = null): mixed
+    {
+        return $this->server[$key] ?? $default;
+    }
+
+    public function setAttribute(string $key, mixed $value): void
+    {
+        $this->attributes[$key] = $value;
+    }
+
+    public function getAttribute(string $key, mixed $default = null): mixed
+    {
+        return $this->attributes[$key] ?? $default;
+    }
+
+    public function isAjax(): bool
+    {
+        return $this->header('X-Requested-With') === 'XMLHttpRequest';
+    }
+
+    public function isPost(): bool
+    {
+        return $this->method() === 'POST';
+    }
+
+    public function isGet(): bool
+    {
+        return $this->method() === 'GET';
+    }
+
+    public function ip(): string
+    {
+        return $this->server['REMOTE_ADDR'] ?? '127.0.0.1';
     }
 }

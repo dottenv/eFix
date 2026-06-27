@@ -4,35 +4,47 @@ namespace App\Core;
 
 class View
 {
-    private string $viewsPath;
+    private string $templatesPath;
+    private array $globalData = [];
 
-    public function __construct(?string $viewsPath = null)
+    public function __construct(string $templatesPath)
     {
-        $this->viewsPath = $viewsPath ?: __DIR__ . '/../../views';
+        $this->templatesPath = rtrim($templatesPath, '/\\');
     }
 
-    public function render(string $template, array $data = []): string
+    public function addGlobal(string $key, mixed $value): void
     {
-        $file = $this->viewsPath . '/' . $template . '.php';
+        $this->globalData[$key] = $value;
+    }
 
-        if (!file_exists($file)) {
-            throw new \RuntimeException("Template not found: {$template}");
+    public function render(string $template, array $data = [], string $layout = null): string
+    {
+        $content = $this->renderPartial($template, $data);
+
+        if ($layout) {
+            return $this->renderPartial($layout, array_merge($data, ['content' => $content]));
         }
 
-        extract($data);
+        return $content;
+    }
+
+    public function renderPartial(string $template, array $data = []): string
+    {
+        $file = $this->templatesPath . '/' . $template . '.php';
+
+        if (!file_exists($file)) {
+            throw new \RuntimeException("Template not found: {$file}");
+        }
+
+        extract(array_merge($this->globalData, $data), EXTR_SKIP);
+
         ob_start();
-        require $file;
+        include $file;
         return ob_get_clean();
     }
 
-    public function layout(string $layout, string $slot, array $data = []): string
+    public function escape(string $value): string
     {
-        $data['slot'] = $slot;
-        return $this->render('layouts/' . $layout, $data);
-    }
-
-    public function component(string $name, array $data = []): string
-    {
-        return $this->render('components/' . $name, $data);
+        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 }
